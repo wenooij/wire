@@ -99,31 +99,39 @@ func writeFloat64(w Writer, x float64) error { return writeFixed64(w, math.Float
 func Fixed[T any](p Proto[T]) func(size uint64) Proto[T] {
 	return func(size uint64) Proto[T] {
 		return proto[T]{
-			read: func(r Reader) (T, error) {
-				rf := newFixedReader(r, size)
-				elem, err := p.Read(rf)
-				if err != nil {
-					var t T
-					return t, nil
-				}
-				if rf.n != 0 {
-					var t T
-					return t, fmt.Errorf("fixed reader expected %d more bytes: %w", rf.n, io.ErrUnexpectedEOF)
-				}
-				return elem, nil
-			},
-			write: func(w Writer, e T) error {
-				wf := newFixedWriter(w, size)
-				if err := p.Write(wf, e); err != nil {
-					return fmt.Errorf("Fixed.Write: %w", err)
-				}
-				if wf.n != 0 {
-					return fmt.Errorf("Fixed.Write: expected %d more bytes: %w", wf.n, io.ErrUnexpectedEOF)
-				}
-				return nil
-			},
-			size: func(T) uint64 { return size },
+			read:  readFixed(p, size),
+			write: writeFixed(p, size),
+			size:  func(T) uint64 { return size },
 		}
+	}
+}
+
+func readFixed[T any](proto Proto[T], size uint64) func(Reader) (T, error) {
+	return func(r Reader) (T, error) {
+		rf := newFixedReader(r, size)
+		elem, err := proto.Read(rf)
+		if err != nil {
+			var t T
+			return t, nil
+		}
+		if rf.n != 0 {
+			var t T
+			return t, fmt.Errorf("fixed reader expected %d more bytes: %w", rf.n, io.ErrUnexpectedEOF)
+		}
+		return elem, nil
+	}
+}
+
+func writeFixed[T any](proto Proto[T], size uint64) func(Writer, T) error {
+	return func(w Writer, e T) error {
+		wf := newFixedWriter(w, size)
+		if err := proto.Write(wf, e); err != nil {
+			return fmt.Errorf("Fixed.Write: %w", err)
+		}
+		if wf.n != 0 {
+			return fmt.Errorf("Fixed.Write: expected %d more bytes: %w", wf.n, io.ErrUnexpectedEOF)
+		}
+		return nil
 	}
 }
 
