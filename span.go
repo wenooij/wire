@@ -10,6 +10,10 @@ func MakeSpan[T any](proto Proto[T]) func(elem T) SpanElem[T] {
 	return func(elem T) SpanElem[T] { return SpanElem[T]{proto.Size(elem), elem} }
 }
 
+func MakeAnySpan[T any](proto Proto[T]) func(elem T) SpanElem[any] {
+	return func(elem T) SpanElem[any] { return SpanElem[any]{proto.Size(elem), elem} }
+}
+
 func (s SpanElem[T]) Size() uint64 { return s.E0 }
 func (s SpanElem[T]) Elem() T      { return s.E1 }
 
