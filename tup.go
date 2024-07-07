@@ -11,7 +11,7 @@ func Tup2[T0, T1 any](p0 Proto[T0], p1 Proto[T1]) Proto[Tup2Val[T0, T1]] {
 	return proto[Tup2Val[T0, T1]]{
 		read:  readTup2(p0, p1),
 		write: writeTup2(p0, p1),
-		size:  func(tup Tup2Val[T0, T1]) uint64 { return p0.Size(tup.E0) + p1.Size(tup.E1) },
+		size:  sizeTup2(p0, p1),
 	}
 }
 
@@ -39,6 +39,10 @@ func writeTup2[T0, T1 any](p0 Proto[T0], p1 Proto[T1]) func(Writer, Tup2Val[T0, 
 		}
 		return nil
 	}
+}
+
+func sizeTup2[T0, T1 any](p0 Proto[T0], p1 Proto[T1]) func(Tup2Val[T0, T1]) uint64 {
+	return func(tup Tup2Val[T0, T1]) uint64 { return p0.Size(tup.E0) + p1.Size(tup.E1) }
 }
 
 type Tup3Val[T0, T1, T2 any] struct {

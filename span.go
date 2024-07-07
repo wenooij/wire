@@ -48,5 +48,6 @@ func writeSpan[T any](proto Proto[T]) func(Writer, SpanElem[T]) error {
 }
 
 func sizeSpan[T any](proto Proto[T]) func(SpanElem[T]) uint64 {
-	return func(span SpanElem[T]) uint64 { size := proto.Size(span.Elem()); return sizeUvarint64(size) + size }
+	size := sizeTup2(Uvarint64, proto)
+	return func(span SpanElem[T]) uint64 { return size(Tup2Val[uint64, T](span)) }
 }
