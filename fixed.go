@@ -6,6 +6,17 @@ import (
 	"math"
 )
 
+// Empty type encodes to 0 bytes over the wire.
+// Useful for encoding map[T]struct{} for instance.
+//
+// FIXME: Take care of footguns like Seq(Empty).
+// FIXME: Define in terms of Struct when structs are implemented.
+var Empty Proto[struct{}] = proto[struct{}]{
+	read:  func(Reader) (struct{}, error) { return struct{}{}, nil },
+	write: func(Writer, struct{}) error { return nil },
+	size:  func(struct{}) uint64 { return 0 },
+}
+
 var Fixed8 Proto[uint8] = proto[uint8]{
 	read:  readFixed8,
 	write: func(w Writer, x uint8) error { return w.WriteByte(byte(x)) },
@@ -112,7 +123,7 @@ func readFixed[T any](proto Proto[T], size uint64) func(Reader) (T, error) {
 		elem, err := proto.Read(rf)
 		if err != nil {
 			var t T
-			return t, nil
+			return t, err
 		}
 		if rf.n != 0 {
 			var t T
@@ -144,7 +155,7 @@ func newFixedReader(r Reader, n uint64) *fixedReader { return &fixedReader{r, n}
 
 func (r *fixedReader) ReadByte() (b byte, err error) {
 	if r.n <= 0 {
-		return 0, io.ErrUnexpectedEOF
+		return 0, io.EOF
 	}
 	b, err = r.Reader.ReadByte()
 	if err != nil {

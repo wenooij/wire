@@ -51,6 +51,13 @@ func sizeField[T any](proto Proto[T]) func(FieldVal[T]) uint64 {
 	return func(field FieldVal[T]) uint64 { return sizeRaw(Tup2Val[uint64, SpanElem[T]](field)) }
 }
 
+// Fields enables coding based on a field-numbers-to-Proto mapping.
+//
+// Reading unknown fields will result in a Field of type Raw ([]byte).
+// To appease the generics, the Field type T must be made any.
+// See Any for help working with Any Protos.
+//
+// Deprecated: Remove this in favor of Struct support.
 func Fields(p map[uint64]Proto[any]) Proto[FieldVal[any]] {
 	return proto[FieldVal[any]]{
 		read:  readFields(p),
