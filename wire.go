@@ -1,8 +1,12 @@
 package wire
 
 import (
+	"errors"
 	"io"
 )
+
+// ErrStop is used in the Visitor style functions to immediately stop the visitor.
+var ErrStop = errors.New("stop")
 
 type Reader interface {
 	io.Reader

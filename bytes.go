@@ -5,41 +5,34 @@ import (
 	"io"
 )
 
-var Raw Proto[[]byte] = RawBufferSize(8)
-
-func RawBufferSize(size uint64) Proto[[]byte] {
-	return proto[[]byte]{
-		read: readRawBufferSize(size),
-		write: func(w Writer, b []byte) error {
-			_, err := w.Write(b)
-			if err != nil {
-				return fmt.Errorf("Raw.Write: %w", err)
-			}
-			return nil
-		},
-		size: func(b []byte) uint64 { return uint64(len(b)) },
-	}
+var Raw Proto[[]byte] = proto[[]byte]{
+	read: func(r Reader) ([]byte, error) { return ReadRawBuffer(r, make([]byte, 0, 8)) },
+	write: func(w Writer, b []byte) error {
+		_, err := w.Write(b)
+		if err != nil {
+			return fmt.Errorf("Raw.Write: %w", err)
+		}
+		return nil
+	},
+	size: func(b []byte) uint64 { return uint64(len(b)) },
 }
 
-func readRawBufferSize(size uint64) func(Reader) ([]byte, error) {
-	return func(r Reader) ([]byte, error) {
-		b := make([]byte, 0, size)
-		for {
-			n, err := r.Read(b[len(b):cap(b)])
-			b = b[:len(b)+n]
-			if err != nil {
-				if err == io.EOF {
-					break
-				}
-				return nil, err
+// ReadRawBuffer reads raw contents from the Reader using buf.
+func ReadRawBuffer(r Reader, buf []byte) ([]byte, error) {
+	for {
+		n, err := r.Read(buf[len(buf):cap(buf)])
+		buf = buf[:len(buf)+n]
+		if err != nil {
+			if err == io.EOF {
+				// Trim extra capacity and return.
+				return buf[0:len(buf):len(buf)], nil
 			}
-			if len(b) == cap(b) {
-				// Add more capacity (let append pick how much).
-				b = append(b, 0)[:len(b)]
-			}
+			return nil, err
 		}
-		// Trim extra capacity and return.
-		return b[0:len(b):len(b)], nil
+		if len(buf) == cap(buf) {
+			// Add more capacity (let append pick how much).
+			buf = append(buf, 0)[:len(buf)]
+		}
 	}
 }
 
@@ -51,7 +44,7 @@ func MakeBytes(bs []byte) SpanElem[[]byte] { return makeBytes(bs) }
 
 var RawString Proto[string] = proto[string]{
 	read: func(r Reader) (string, error) {
-		bs, err := readRawBufferSize(8)(r)
+		bs, err := ReadRawBuffer(r, make([]byte, 0, 8))
 		if err != nil {
 			return "", err
 		}

@@ -13,6 +13,26 @@ func Seq[T any](p Proto[T]) Proto[[]T] {
 	}
 }
 
+func VisitSeq[T any](proto Proto[T]) func(Reader, func(T) error) error {
+	return func(r Reader, f func(T) error) error {
+		for {
+			elem, err := proto.Read(r)
+			if err != nil {
+				if err == io.EOF {
+					return nil
+				}
+				return err
+			}
+			if err := f(elem); err != nil {
+				if err == ErrStop {
+					return nil
+				}
+				return err
+			}
+		}
+	}
+}
+
 func readSeq[T any](proto Proto[T]) func(Reader) ([]T, error) {
 	return func(r Reader) ([]T, error) {
 		for res := make([]T, 0, 8); ; {

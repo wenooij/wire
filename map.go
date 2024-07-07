@@ -10,6 +10,10 @@ func Map[K comparable, V any](key Proto[K], val Proto[V]) Proto[SpanElem[[]Tup2V
 	return Span(RawMap(key, val))
 }
 
+func VisitMap[K comparable, V any](key Proto[K], val Proto[V]) func(Reader, func(Tup2Val[K, V]) error) error {
+	return VisitSeq(Tup2(key, val))
+}
+
 func MakeRawMap[K comparable, V any](m map[K]V) []Tup2Val[K, V] {
 	res := make([]Tup2Val[K, V], 0, len(m))
 	for k, v := range m {
