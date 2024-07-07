@@ -4,6 +4,8 @@ import "fmt"
 
 type anyProto[T any] struct{ Proto[T] }
 
+func Any[T any](proto Proto[T]) Proto[any] { return anyProto[T]{proto} }
+
 func (p anyProto[T]) Read(r Reader) (any, error)     { return p.Proto.Read(r) }
 func (p anyProto[T]) Write(w Writer, elem any) error { return anyWrite(p.Proto.Write)(w, elem) }
 func (p anyProto[T]) Size(elem any) uint64           { return anySize(p.Proto.Size)(elem) }

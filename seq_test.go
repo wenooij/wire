@@ -8,7 +8,7 @@ import (
 func TestWriteSeqFieldUvarint64(t *testing.T) {
 	var b bytes.Buffer
 	makeField := MakeField(Uvarint64)
-	err := Seq[FieldVal[uint64]](Field(Uvarint64)).Write(&b, []FieldVal[uint64]{
+	err := Seq(Field(Uvarint64)).Write(&b, []FieldVal[uint64]{
 		makeField(1, 1),
 		makeField(2, 2),
 		makeField(3, 3),

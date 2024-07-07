@@ -9,11 +9,11 @@ func MakeField[T any](proto Proto[T]) func(num uint64, val T) FieldVal[T] {
 	return func(num uint64, val T) FieldVal[T] { return FieldVal[T]{E0: num, E1: makeSpan(val)} }
 }
 
-func makeAnyField[T any](proto Proto[T]) func(num uint64, val T) FieldVal[any] {
-	makeSpan := MakeSpan(proto)
+// MakeAnyField creates a field by converting proto to an Any.
+// It can prevent accidential type errors when working with Any(T) directly.
+func MakeAnyField[T any](proto Proto[T]) func(num uint64, val T) FieldVal[any] {
 	return func(num uint64, val T) FieldVal[any] {
-		span := makeSpan(val)
-		return FieldVal[any]{E0: num, E1: SpanElem[any]{span.Size(), span.Elem()}}
+		return FieldVal[any]{E0: num, E1: SpanElem[any]{proto.Size(val), val}}
 	}
 }
 
@@ -59,7 +59,7 @@ func Fields(p map[uint64]Proto[any]) Proto[FieldVal[any]] {
 	}
 }
 
-var anyRawSpan = Span(anyProto[[]byte]{Raw})
+var anyRawSpan = Span(Any(Raw))
 
 func readFields(protos map[uint64]Proto[any]) func(Reader) (FieldVal[any], error) {
 	numReader := Uvarint64.Read

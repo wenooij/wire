@@ -25,14 +25,14 @@ func TestWriteFields(t *testing.T) {
 	var b bytes.Buffer
 	fields := Fields(
 		map[uint64]Proto[any]{
-			100: anyProto[string]{RawString},
-			200: anyProto[uint64]{Uvarint64},
+			100: Any(RawString),
+			200: Any(Uvarint64),
 		},
 	)
-	if err := fields.Write(&b, MakeField(anyProto[string]{RawString})(100, "abc")); err != nil {
+	if err := fields.Write(&b, MakeAnyField(RawString)(100, "abc")); err != nil {
 		t.Fatal(err)
 	}
-	if err := fields.Write(&b, MakeField(anyProto[uint64]{Uvarint64})(200, uint64(123))); err != nil {
+	if err := fields.Write(&b, MakeAnyField(Uvarint64)(200, uint64(123))); err != nil {
 		t.Fatal(err)
 	}
 
