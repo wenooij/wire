@@ -7,7 +7,7 @@ import (
 var anyRawSpan = Span(Any(Raw))
 
 func RawStruct(fields map[uint64]Proto[any]) ProtoRanger[[]FieldVal[any], FieldVal[any]] {
-	return Seq(structField(fields))
+	return RawSeq(structField(fields))
 }
 
 // Struct enables coding based on a field-numbers-to-Proto mapping.

@@ -5,18 +5,18 @@ import (
 	"io"
 )
 
-func Seq[T any](p Proto[T]) ProtoRanger[[]T, T] {
+func RawSeq[T any](p Proto[T]) ProtoRanger[[]T, T] {
 	return protoRanger[[]T, T]{
 		proto: proto[[]T]{
-			read:  readSeq(p),
-			write: writeSeq(p),
-			size:  sizeSeq(p),
+			read:  readRawSeq(p),
+			write: writeRawSeq(p),
+			size:  sizeRawSeq(p),
 		},
-		rangeFunc: rangeSeq(p),
+		rangeFunc: rangeRawSeq(p),
 	}
 }
 
-func readSeq[T any](proto Proto[T]) func(Reader) ([]T, error) {
+func readRawSeq[T any](proto Proto[T]) func(Reader) ([]T, error) {
 	return func(r Reader) ([]T, error) {
 		for res := make([]T, 0, 8); ; {
 			elem, err := proto.Read(r)
@@ -31,7 +31,7 @@ func readSeq[T any](proto Proto[T]) func(Reader) ([]T, error) {
 	}
 }
 
-func writeSeq[T any](proto Proto[T]) func(w Writer, seq []T) error {
+func writeRawSeq[T any](proto Proto[T]) func(w Writer, seq []T) error {
 	return func(w Writer, seq []T) error {
 		for _, e := range seq {
 			if err := proto.Write(w, e); err != nil {
@@ -42,7 +42,7 @@ func writeSeq[T any](proto Proto[T]) func(w Writer, seq []T) error {
 	}
 }
 
-func sizeSeq[T any](proto Proto[T]) func(seq []T) uint64 {
+func sizeRawSeq[T any](proto Proto[T]) func(seq []T) uint64 {
 	return func(seq []T) uint64 {
 		var n uint64
 		for _, e := range seq {
@@ -52,7 +52,7 @@ func sizeSeq[T any](proto Proto[T]) func(seq []T) uint64 {
 	}
 }
 
-func rangeSeq[T any](proto Proto[T]) func(Reader, func(T) error) error {
+func rangeRawSeq[T any](proto Proto[T]) func(Reader, func(T) error) error {
 	return func(r Reader, f func(T) error) error {
 		for {
 			elem, err := proto.Read(r)
@@ -70,4 +70,8 @@ func rangeSeq[T any](proto Proto[T]) func(Reader, func(T) error) error {
 			}
 		}
 	}
+}
+
+func Seq[T any](proto Proto[T]) ProtoRanger[SpanElem[[]T], T] {
+	return spanRanger[[]T, T](RawSeq(proto))
 }

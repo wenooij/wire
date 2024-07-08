@@ -18,7 +18,7 @@ var Raw ProtoRanger[[]byte, byte] = protoRanger[[]byte, byte]{
 		},
 		size: func(b []byte) uint64 { return uint64(len(b)) },
 	},
-	rangeFunc: func(r Reader, f func(byte) error) error { return Seq(Fixed8).Range(r, f) },
+	rangeFunc: func(r Reader, f func(byte) error) error { return RawSeq(Fixed8).Range(r, f) },
 }
 
 // readRawBuffer reads raw contents from the Reader using buf.
@@ -113,7 +113,7 @@ var RawString ProtoRanger[string, rune] = protoRanger[string, rune]{
 		write: writeRawString,
 		size:  func(s string) uint64 { return uint64(len(s)) },
 	},
-	rangeFunc: rangeRawString,
+	rangeFunc: Seq(Rune).Range,
 }
 
 func readRawString(r Reader) (string, error) {
@@ -129,21 +129,6 @@ func writeRawString(w Writer, s string) error {
 		return fmt.Errorf("RawString.Write: %w", err)
 	}
 	return nil
-}
-
-func rangeRawString(r Reader, f func(rune) error) error {
-	for {
-		r, err := Rune.Read(r)
-		if err != nil {
-			if err == io.EOF {
-				return nil
-			}
-			return err
-		}
-		if err := f(r); err != nil {
-			return err
-		}
-	}
 }
 
 var String ProtoRanger[SpanElem[string], rune] = spanRanger[string, rune](RawString)

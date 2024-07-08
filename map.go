@@ -3,7 +3,7 @@ package wire
 import "fmt"
 
 func RawMap[K comparable, V any](key Proto[K], val Proto[V]) ProtoRanger[[]Tup2Val[K, V], Tup2Val[K, V]] {
-	return Seq(Tup2(key, val))
+	return RawSeq(Tup2(key, val))
 }
 
 func Map[K comparable, V any](key Proto[K], val Proto[V]) Proto[SpanElem[[]Tup2Val[K, V]]] {

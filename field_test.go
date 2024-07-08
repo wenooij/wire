@@ -15,7 +15,7 @@ func TestWriteFieldUvarint64(t *testing.T) {
 
 func TestWriteFieldSeqUvarint64(t *testing.T) {
 	var b bytes.Buffer
-	if err := Field(Seq(Uvarint64)).Write(&b, MakeField(Seq(Uvarint64))(100, []uint64{1, 2, 3})); err != nil {
+	if err := Field(RawSeq(Uvarint64)).Write(&b, MakeField(RawSeq(Uvarint64))(100, []uint64{1, 2, 3})); err != nil {
 		t.Fatal(err)
 	}
 	t.Logf("%x\n", b.Bytes())
