@@ -15,28 +15,13 @@ func RawStruct(fields map[uint64]Proto[any]) ProtoRanger[[]FieldVal[any], FieldV
 // Reading unknown fields will result in a Field of type Raw ([]byte).
 // To appease the generics, the Field type T must be made any.
 // See Any for help working with Any Protos.
-func Struct(fields map[uint64]Proto[any]) Proto[SpanElem[[]FieldVal[any]]] {
-	return Span(RawStruct(fields))
+func Struct(fields map[uint64]Proto[any]) ProtoRanger[SpanElem[[]FieldVal[any]], FieldVal[any]] {
+	return spanRanger[[]FieldVal[any], FieldVal[any]](RawStruct(fields))
 }
 
 func MakeStruct(fields map[uint64]Proto[any]) func([]FieldVal[any]) SpanElem[[]FieldVal[any]] {
 	rawStruct := RawStruct(fields)
 	return func(fields []FieldVal[any]) SpanElem[[]FieldVal[any]] { return MakeSpan(rawStruct)(fields) }
-}
-
-func VisitStruct(fields map[uint64]Proto[any]) func(Reader, func(FieldVal[any]) error) error {
-	visitSeq := rangeSeq(structField(fields))
-	return func(r Reader, f func(FieldVal[any]) error) error {
-		return visitSeq(r, func(field FieldVal[any]) error {
-			if err := f(FieldVal[any]{field.Num(), field.E1}); err != nil {
-				if err == ErrStop {
-					return nil
-				}
-				return err
-			}
-			return nil
-		})
-	}
 }
 
 func structField(p map[uint64]Proto[any]) Proto[FieldVal[any]] {

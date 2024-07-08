@@ -55,3 +55,16 @@ func sizeSpan[T any](proto Proto[T]) func(SpanElem[T]) uint64 {
 	size := sizeTup2(Uvarint64, proto)
 	return func(span SpanElem[T]) uint64 { return size(Tup2Val[uint64, T](span)) }
 }
+
+func spanRanger[T, E any](p Proto[T]) ProtoRanger[SpanElem[T], E] {
+	return protoRanger[SpanElem[T], E]{
+		proto: Span(p).(proto[SpanElem[T]]),
+		rangeFunc: func(r Reader, f func(E) error) error {
+			ranger, ok := p.(ProtoRanger[T, E])
+			if !ok {
+				panic(fmt.Errorf("not a ProtoRanger: %T", p))
+			}
+			return ranger.Range(r, f)
+		},
+	}
+}

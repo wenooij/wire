@@ -3,18 +3,22 @@ package wire
 import (
 	"fmt"
 	"io"
+	"unicode/utf8"
 )
 
-var Raw Proto[[]byte] = proto[[]byte]{
-	read: func(r Reader) ([]byte, error) { return readRawBuffer(r, make([]byte, 0, 8)) },
-	write: func(w Writer, b []byte) error {
-		_, err := w.Write(b)
-		if err != nil {
-			return fmt.Errorf("Raw.Write: %w", err)
-		}
-		return nil
+var Raw ProtoRanger[[]byte, byte] = protoRanger[[]byte, byte]{
+	proto: proto[[]byte]{
+		read: func(r Reader) ([]byte, error) { return readRawBuffer(r, make([]byte, 0, 8)) },
+		write: func(w Writer, b []byte) error {
+			_, err := w.Write(b)
+			if err != nil {
+				return fmt.Errorf("Raw.Write: %w", err)
+			}
+			return nil
+		},
+		size: func(b []byte) uint64 { return uint64(len(b)) },
 	},
-	size: func(b []byte) uint64 { return uint64(len(b)) },
+	rangeFunc: func(r Reader, f func(byte) error) error { return Seq(Fixed8).Range(r, f) },
 }
 
 // readRawBuffer reads raw contents from the Reader using buf.
@@ -103,24 +107,46 @@ func sizeRune(r rune) uint64 {
 	return uint64(n)
 }
 
-var RawString Proto[string] = proto[string]{
-	read: func(r Reader) (string, error) {
-		bs, err := readRawBuffer(r, make([]byte, 0, 8))
-		if err != nil {
-			return "", err
-		}
-		return string(bs), nil
+var RawString ProtoRanger[string, rune] = protoRanger[string, rune]{
+	proto: proto[string]{
+		read:  readRawString,
+		write: writeRawString,
+		size:  func(s string) uint64 { return uint64(len(s)) },
 	},
-	write: func(w Writer, s string) error {
-		if _, err := w.Write([]byte(s)); err != nil {
-			return fmt.Errorf("RawString.Write: %w", err)
-		}
-		return nil
-	},
-	size: func(s string) uint64 { return uint64(len(s)) },
+	rangeFunc: rangeRawString,
 }
 
-var String = Span(RawString)
+func readRawString(r Reader) (string, error) {
+	bs, err := readRawBuffer(r, make([]byte, 0, 8))
+	if err != nil {
+		return "", err
+	}
+	return string(bs), nil
+}
+
+func writeRawString(w Writer, s string) error {
+	if _, err := w.Write([]byte(s)); err != nil {
+		return fmt.Errorf("RawString.Write: %w", err)
+	}
+	return nil
+}
+
+func rangeRawString(r Reader, f func(rune) error) error {
+	for {
+		r, err := Rune.Read(r)
+		if err != nil {
+			if err == io.EOF {
+				return nil
+			}
+			return err
+		}
+		if err := f(r); err != nil {
+			return err
+		}
+	}
+}
+
+var String ProtoRanger[SpanElem[string], rune] = spanRanger[string, rune](RawString)
 
 var makeString = MakeSpan(RawString)
 

@@ -7,11 +7,7 @@ func RawMap[K comparable, V any](key Proto[K], val Proto[V]) ProtoRanger[[]Tup2V
 }
 
 func Map[K comparable, V any](key Proto[K], val Proto[V]) Proto[SpanElem[[]Tup2Val[K, V]]] {
-	return Span(RawMap(key, val))
-}
-
-func VisitMap[K comparable, V any](key Proto[K], val Proto[V]) func(Reader, func(Tup2Val[K, V]) error) error {
-	return rangeSeq(Tup2(key, val))
+	return spanRanger[[]Tup2Val[K, V], Tup2Val[K, V]](RawMap(key, val))
 }
 
 func MakeRawMap[K comparable, V any](m map[K]V) []Tup2Val[K, V] {
