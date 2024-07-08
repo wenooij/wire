@@ -13,7 +13,7 @@ func TestWriteStruct(t *testing.T) {
 		1: Any(RawString),
 		2: Any(Uvarint64),
 	}
-	if err := Struct(fields).Write(&b, MakeStruct(fields)([]FieldVal[any]{
+	if err := Struct(fields).Write(&b, Struct(fields).Make([]FieldVal[any]{
 		Field(RawString).Make(Tup2Val[uint64, string]{1, "a"}).Any(),
 		Field(Uvarint64).Make(Tup2Val[uint64, uint64]{2, 123}).Any(),
 	})); err != nil {
