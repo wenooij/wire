@@ -6,22 +6,19 @@ import (
 
 type SpanElem[T any] Tup2Val[uint64, T]
 
-func MakeSpan[T any](proto Proto[T]) func(elem T) SpanElem[T] {
-	return func(elem T) SpanElem[T] { return SpanElem[T]{proto.Size(elem), elem} }
-}
-
-func MakeAnySpan[T any](proto Proto[T]) func(elem T) SpanElem[any] {
-	return func(elem T) SpanElem[any] { return SpanElem[any]{proto.Size(elem), elem} }
-}
+func (s SpanElem[T]) Any() SpanElem[any] { return SpanElem[any]{s.E0, s.E1} }
 
 func (s SpanElem[T]) Size() uint64 { return s.E0 }
 func (s SpanElem[T]) Elem() T      { return s.E1 }
 
-func Span[T any](p Proto[T]) Proto[SpanElem[T]] {
-	return proto[SpanElem[T]]{
-		read:  readSpan(p),
-		write: writeSpan(p),
-		size:  sizeSpan(p),
+func Span[T any](p Proto[T]) ProtoMaker[T, SpanElem[T]] {
+	return protoMaker[T, SpanElem[T]]{
+		proto: proto[SpanElem[T]]{
+			read:  readSpan(p),
+			write: writeSpan(p),
+			size:  sizeSpan(p),
+		},
+		makeFunc: func(e T) SpanElem[T] { return SpanElem[T]{p.Size(e), e} },
 	}
 }
 
@@ -56,15 +53,19 @@ func sizeSpan[T any](proto Proto[T]) func(SpanElem[T]) uint64 {
 	return func(span SpanElem[T]) uint64 { return size(Tup2Val[uint64, T](span)) }
 }
 
-func spanRanger[T, E any](p Proto[T]) ProtoRanger[SpanElem[T], E] {
-	return protoRanger[SpanElem[T], E]{
-		proto: Span(p).(proto[SpanElem[T]]),
-		rangeFunc: func(r Reader, f func(E) error) error {
-			ranger, ok := p.(ProtoRanger[T, E])
-			if !ok {
-				panic(fmt.Errorf("not a ProtoRanger: %T", p))
-			}
-			return ranger.Range(r, f)
+func spanMakeRanger[T, R any](p Proto[T]) ProtoMakeRanger[T, SpanElem[T], R] {
+	protoMaker := Span(p).(protoMaker[T, SpanElem[T]])
+	return protoMakeRanger[T, SpanElem[T], R]{
+		protoRanger: protoRanger[SpanElem[T], R]{
+			proto: protoMaker.proto,
+			rangeFunc: func(r Reader, f func(R) error) error {
+				ranger, ok := p.(ProtoRanger[T, R])
+				if !ok {
+					panic(fmt.Errorf("not a ProtoRanger: %T", p))
+				}
+				return ranger.Range(r, f)
+			},
 		},
+		makeFunc: protoMaker.makeFunc,
 	}
 }

@@ -6,13 +6,16 @@ import (
 	"unicode/utf8"
 )
 
-var Raw ProtoRanger[[]byte, byte] = protoRanger[[]byte, byte]{
-	proto: proto[[]byte]{
-		read:  readRawBytes,
-		write: writeRawBytes,
-		size:  func(b []byte) uint64 { return uint64(len(b)) },
+var Raw ProtoMakeRanger[[]byte, []byte, byte] = protoMakeRanger[[]byte, []byte, byte]{
+	protoRanger: protoRanger[[]byte, byte]{
+		proto: proto[[]byte]{
+			read:  readRawBytes,
+			write: writeRawBytes,
+			size:  func(b []byte) uint64 { return uint64(len(b)) },
+		},
+		rangeFunc: func(r Reader, f func(byte) error) error { return RawSeq(Fixed8).Range(r, f) },
 	},
-	rangeFunc: func(r Reader, f func(byte) error) error { return RawSeq(Fixed8).Range(r, f) },
+	makeFunc: func(b []byte) []byte { return b },
 }
 
 func readRawBytes(r Reader) ([]byte, error) {
@@ -41,11 +44,7 @@ func writeRawBytes(w Writer, b []byte) error {
 	return nil
 }
 
-var Bytes = Span(Raw)
-
-var makeBytes = MakeSpan(Raw)
-
-func MakeBytes(bs []byte) SpanElem[[]byte] { return makeBytes(bs) }
+var Bytes ProtoMakeRanger[[]byte, SpanElem[[]byte], byte] = spanMakeRanger[[]byte, byte](Raw)
 
 var Rune Proto[rune] = proto[rune]{
 	read:  readRune,
@@ -125,8 +124,4 @@ func readRawString(r Reader) (string, error) {
 	return string(bs), nil
 }
 
-var String ProtoRanger[SpanElem[string], rune] = spanRanger[string, rune](RawString)
-
-var makeString = MakeSpan(RawString)
-
-func MakeString(s string) SpanElem[string] { return makeString(s) }
+var String ProtoMakeRanger[string, SpanElem[string], rune] = spanMakeRanger[string, rune](RawString)

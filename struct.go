@@ -16,12 +16,12 @@ func RawStruct(fields map[uint64]Proto[any]) ProtoRanger[[]FieldVal[any], FieldV
 // To appease the generics, the Field type T must be made any.
 // See Any for help working with Any Protos.
 func Struct(fields map[uint64]Proto[any]) ProtoRanger[SpanElem[[]FieldVal[any]], FieldVal[any]] {
-	return spanRanger[[]FieldVal[any], FieldVal[any]](RawStruct(fields))
+	return spanMakeRanger[[]FieldVal[any], FieldVal[any]](RawStruct(fields))
 }
 
 func MakeStruct(fields map[uint64]Proto[any]) func([]FieldVal[any]) SpanElem[[]FieldVal[any]] {
 	rawStruct := RawStruct(fields)
-	return func(fields []FieldVal[any]) SpanElem[[]FieldVal[any]] { return MakeSpan(rawStruct)(fields) }
+	return func(fields []FieldVal[any]) SpanElem[[]FieldVal[any]] { return Span(rawStruct).Make(fields) }
 }
 
 func structField(p map[uint64]Proto[any]) Proto[FieldVal[any]] {

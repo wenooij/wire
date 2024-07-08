@@ -7,11 +7,10 @@ import (
 
 func TestWriteSeqFieldUvarint64(t *testing.T) {
 	var b bytes.Buffer
-	makeField := MakeField(Uvarint64)
 	err := RawSeq(Field(Uvarint64)).Write(&b, []FieldVal[uint64]{
-		makeField(1, 1),
-		makeField(2, 2),
-		makeField(3, 3),
+		Field(Uvarint64).Make(Tup2Val[uint64, uint64]{1, 1}),
+		Field(Uvarint64).Make(Tup2Val[uint64, uint64]{2, 2}),
+		Field(Uvarint64).Make(Tup2Val[uint64, uint64]{3, 3}),
 	})
 	if err != nil {
 		t.Fatal(err)

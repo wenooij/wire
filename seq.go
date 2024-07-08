@@ -72,6 +72,6 @@ func rangeRawSeq[T any](proto Proto[T]) func(Reader, func(T) error) error {
 	}
 }
 
-func Seq[T any](proto Proto[T]) ProtoRanger[SpanElem[[]T], T] {
-	return spanRanger[[]T, T](RawSeq(proto))
+func Seq[T any](proto Proto[T]) ProtoMakeRanger[[]T, SpanElem[[]T], T] {
+	return spanMakeRanger[[]T, T](RawSeq(proto))
 }

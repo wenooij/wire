@@ -26,6 +26,18 @@ type proto[T any] struct {
 	size  func(T) uint64
 }
 
-func (f proto[T]) Read(r Reader) (T, error)     { return f.read(r) }
-func (f proto[T]) Write(w Writer, elem T) error { return f.write(w, elem) }
-func (f proto[T]) Size(elem T) uint64           { return f.size(elem) }
+func (p proto[T]) Read(r Reader) (T, error)     { return p.read(r) }
+func (p proto[T]) Write(w Writer, elem T) error { return p.write(w, elem) }
+func (p proto[T]) Size(elem T) uint64           { return p.size(elem) }
+
+type ProtoMaker[E, T any] interface {
+	Proto[T]
+	Make(E) T
+}
+
+type protoMaker[E, T any] struct {
+	proto[T]
+	makeFunc func(E) T
+}
+
+func (p protoMaker[E, T]) Make(e E) T { return p.makeFunc(e) }

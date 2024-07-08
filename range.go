@@ -24,3 +24,15 @@ func (p protoRanger[T, E]) Range(r Reader, f func(E) error) error {
 	}
 	return nil
 }
+
+type ProtoMakeRanger[E, T, R any] interface {
+	ProtoRanger[T, R]
+	ProtoMaker[E, T]
+}
+
+type protoMakeRanger[E, T, R any] struct {
+	protoRanger[T, R]
+	makeFunc func(E) T
+}
+
+func (p protoMakeRanger[E, T, R]) Make(e E) T { return p.makeFunc(e) }

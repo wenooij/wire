@@ -23,7 +23,7 @@ func TestReadBytes(t *testing.T) {
 
 func TestWriteBytes(t *testing.T) {
 	var b bytes.Buffer
-	if err := Bytes.Write(&b, MakeSpan(Raw)([]byte("abc123"))); err != nil {
+	if err := Bytes.Write(&b, Span(Raw).Make([]byte("abc123"))); err != nil {
 		t.Fatal(err)
 	}
 	got := b.Bytes()
@@ -34,7 +34,7 @@ func TestWriteBytes(t *testing.T) {
 }
 
 func TestSizeBytes(t *testing.T) {
-	got := Bytes.Size(MakeBytes([]byte("abc123")))
+	got := Bytes.Size(Bytes.Make([]byte("abc123")))
 	want := uint64(7)
 	if want != got {
 		t.Errorf("TestSizeBytes(): got %d, want %d", got, want)

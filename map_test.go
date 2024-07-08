@@ -8,29 +8,30 @@ import (
 )
 
 func TestReadMapSet(t *testing.T) {
-	m := Map(String, Empty)
 	var b bytes.Buffer
 	b.WriteString("\x06\x01a\x01b\x01c")
-	got, err := m.Read(&b)
+	got, err := Map(String, Empty).Read(&b)
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := MakeDeterministicMap(String, Empty)(
-		map[SpanElem[string]]struct{}{MakeString("a"): {}, MakeString("b"): {}, MakeString("c"): {}},
-		[]SpanElem[string]{MakeString("a"), MakeString("b"), MakeString("c")},
-	)
+	want := Map(String, Empty).Make([]Tup2Val[SpanElem[string], struct{}]{
+		{String.Make("a"), struct{}{}},
+		{String.Make("b"), struct{}{}},
+		{String.Make("c"), struct{}{}},
+	})
 	if diff := cmp.Diff(want, got); diff != "" {
 		t.Errorf("TestReadMapSet(): got diff (-want, +got):\n%s", diff)
 	}
 }
 
 func TestWriteMapSet(t *testing.T) {
-	m := Map(String, Empty)
 	var b bytes.Buffer
-	err := m.Write(&b, MakeDeterministicMap(String, Empty)(
-		map[SpanElem[string]]struct{}{MakeString("a"): {}, MakeString("b"): {}, MakeString("c"): {}},
-		[]SpanElem[string]{MakeString("a"), MakeString("b"), MakeString("c")},
-	))
+	mv := Map(String, Empty).Make([]Tup2Val[SpanElem[string], struct{}]{
+		{String.Make("a"), struct{}{}},
+		{String.Make("b"), struct{}{}},
+		{String.Make("c"), struct{}{}},
+	})
+	err := Map(String, Empty).Write(&b, mv)
 	if err != nil {
 		t.Fatal(err)
 	}
