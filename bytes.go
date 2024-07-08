@@ -42,6 +42,67 @@ var makeBytes = MakeSpan(Raw)
 
 func MakeBytes(bs []byte) SpanElem[[]byte] { return makeBytes(bs) }
 
+var Rune Proto[rune] = proto[rune]{
+	read:  readRune,
+	write: writeRune,
+	size:  sizeRune,
+}
+
+func readRune(r Reader) (rune, error) {
+	b, err := r.ReadByte()
+	if err != nil {
+		return 0, err
+	}
+	if b < utf8.RuneSelf {
+		return rune(b), nil // ASCII
+	}
+	if !utf8.RuneStart(b) {
+		return utf8.RuneError, nil
+	}
+	// FIXME: Reduce calls to DecodeRune somehow.
+	s := make([]byte, 0, 4)
+	b1, err := r.ReadByte()
+	if err != nil {
+		return 0, err
+	}
+	s = append(s, b1)
+	if r, _ := utf8.DecodeRune(s); r != utf8.RuneError {
+		return r, nil
+	}
+	b2, err := r.ReadByte()
+	if err != nil {
+		return 0, err
+	}
+	s = append(s, b2)
+	if r, _ := utf8.DecodeRune(s); r != utf8.RuneError {
+		return r, nil
+	}
+	b3, err := r.ReadByte()
+	if err != nil {
+		return 0, err
+	}
+	s = append(s, b3)
+	if r, _ := utf8.DecodeRune(s); r != utf8.RuneError {
+		return r, nil
+	}
+	return utf8.RuneError, nil
+}
+func writeRune(w Writer, r rune) error {
+	if r < utf8.RuneSelf {
+		w.WriteByte(byte(r))
+	}
+	b := make([]byte, utf8.RuneLen(r))
+	_, err := w.Write(b[:utf8.EncodeRune(b, r)])
+	return err
+}
+func sizeRune(r rune) uint64 {
+	n := utf8.RuneLen(r)
+	if n < 0 {
+		panic("invalid rune")
+	}
+	return uint64(n)
+}
+
 var RawString Proto[string] = proto[string]{
 	read: func(r Reader) (string, error) {
 		bs, err := readRawBuffer(r, make([]byte, 0, 8))
