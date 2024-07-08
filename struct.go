@@ -6,7 +6,9 @@ import (
 
 var anyRawSpan = Span(Any(Raw))
 
-func RawStruct(fields map[uint64]Proto[any]) Proto[[]FieldVal[any]] { return Seq(structField(fields)) }
+func RawStruct(fields map[uint64]Proto[any]) ProtoRanger[[]FieldVal[any], FieldVal[any]] {
+	return Seq(structField(fields))
+}
 
 // Struct enables coding based on a field-numbers-to-Proto mapping.
 //
@@ -23,7 +25,7 @@ func MakeStruct(fields map[uint64]Proto[any]) func([]FieldVal[any]) SpanElem[[]F
 }
 
 func VisitStruct(fields map[uint64]Proto[any]) func(Reader, func(FieldVal[any]) error) error {
-	visitSeq := VisitSeq(structField(fields))
+	visitSeq := rangeSeq(structField(fields))
 	return func(r Reader, f func(FieldVal[any]) error) error {
 		return visitSeq(r, func(field FieldVal[any]) error {
 			if err := f(FieldVal[any]{field.Num(), field.E1}); err != nil {

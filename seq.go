@@ -5,31 +5,14 @@ import (
 	"io"
 )
 
-func Seq[T any](p Proto[T]) Proto[[]T] {
-	return proto[[]T]{
-		read:  readSeq(p),
-		write: writeSeq(p),
-		size:  sizeSeq(p),
-	}
-}
-
-func VisitSeq[T any](proto Proto[T]) func(Reader, func(T) error) error {
-	return func(r Reader, f func(T) error) error {
-		for {
-			elem, err := proto.Read(r)
-			if err != nil {
-				if err == io.EOF {
-					return nil
-				}
-				return err
-			}
-			if err := f(elem); err != nil {
-				if err == ErrStop {
-					return nil
-				}
-				return err
-			}
-		}
+func Seq[T any](p Proto[T]) ProtoRanger[[]T, T] {
+	return protoRanger[[]T, T]{
+		proto: proto[[]T]{
+			read:  readSeq(p),
+			write: writeSeq(p),
+			size:  sizeSeq(p),
+		},
+		rangeFunc: rangeSeq(p),
 	}
 }
 
@@ -66,5 +49,25 @@ func sizeSeq[T any](proto Proto[T]) func(seq []T) uint64 {
 			n += proto.Size(e)
 		}
 		return n
+	}
+}
+
+func rangeSeq[T any](proto Proto[T]) func(Reader, func(T) error) error {
+	return func(r Reader, f func(T) error) error {
+		for {
+			elem, err := proto.Read(r)
+			if err != nil {
+				if err == io.EOF {
+					return nil
+				}
+				return err
+			}
+			if err := f(elem); err != nil {
+				if err == ErrStop {
+					return nil
+				}
+				return err
+			}
+		}
 	}
 }

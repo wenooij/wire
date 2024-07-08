@@ -6,7 +6,7 @@ import (
 )
 
 var Raw Proto[[]byte] = proto[[]byte]{
-	read: func(r Reader) ([]byte, error) { return ReadRawBuffer(r, make([]byte, 0, 8)) },
+	read: func(r Reader) ([]byte, error) { return readRawBuffer(r, make([]byte, 0, 8)) },
 	write: func(w Writer, b []byte) error {
 		_, err := w.Write(b)
 		if err != nil {
@@ -17,8 +17,8 @@ var Raw Proto[[]byte] = proto[[]byte]{
 	size: func(b []byte) uint64 { return uint64(len(b)) },
 }
 
-// ReadRawBuffer reads raw contents from the Reader using buf.
-func ReadRawBuffer(r Reader, buf []byte) ([]byte, error) {
+// readRawBuffer reads raw contents from the Reader using buf.
+func readRawBuffer(r Reader, buf []byte) ([]byte, error) {
 	for {
 		n, err := r.Read(buf[len(buf):cap(buf)])
 		buf = buf[:len(buf)+n]
@@ -44,7 +44,7 @@ func MakeBytes(bs []byte) SpanElem[[]byte] { return makeBytes(bs) }
 
 var RawString Proto[string] = proto[string]{
 	read: func(r Reader) (string, error) {
-		bs, err := ReadRawBuffer(r, make([]byte, 0, 8))
+		bs, err := readRawBuffer(r, make([]byte, 0, 8))
 		if err != nil {
 			return "", err
 		}
