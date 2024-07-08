@@ -8,22 +8,15 @@ import (
 
 var Raw ProtoRanger[[]byte, byte] = protoRanger[[]byte, byte]{
 	proto: proto[[]byte]{
-		read: func(r Reader) ([]byte, error) { return readRawBuffer(r, make([]byte, 0, 8)) },
-		write: func(w Writer, b []byte) error {
-			_, err := w.Write(b)
-			if err != nil {
-				return fmt.Errorf("Raw.Write: %w", err)
-			}
-			return nil
-		},
-		size: func(b []byte) uint64 { return uint64(len(b)) },
+		read:  readRawBytes,
+		write: writeRawBytes,
+		size:  func(b []byte) uint64 { return uint64(len(b)) },
 	},
 	rangeFunc: func(r Reader, f func(byte) error) error { return RawSeq(Fixed8).Range(r, f) },
 }
 
-// readRawBuffer reads raw contents from the Reader using buf.
-func readRawBuffer(r Reader, buf []byte) ([]byte, error) {
-	for {
+func readRawBytes(r Reader) ([]byte, error) {
+	for buf := make([]byte, 0, 8); ; {
 		n, err := r.Read(buf[len(buf):cap(buf)])
 		buf = buf[:len(buf)+n]
 		if err != nil {
@@ -38,6 +31,14 @@ func readRawBuffer(r Reader, buf []byte) ([]byte, error) {
 			buf = append(buf, 0)[:len(buf)]
 		}
 	}
+}
+
+func writeRawBytes(w Writer, b []byte) error {
+	_, err := w.Write(b)
+	if err != nil {
+		return fmt.Errorf("Raw.Write: %w", err)
+	}
+	return nil
 }
 
 var Bytes = Span(Raw)
@@ -110,25 +111,18 @@ func sizeRune(r rune) uint64 {
 var RawString ProtoRanger[string, rune] = protoRanger[string, rune]{
 	proto: proto[string]{
 		read:  readRawString,
-		write: writeRawString,
+		write: func(w Writer, s string) error { return Raw.Write(w, []byte(s)) },
 		size:  func(s string) uint64 { return uint64(len(s)) },
 	},
 	rangeFunc: Seq(Rune).Range,
 }
 
 func readRawString(r Reader) (string, error) {
-	bs, err := readRawBuffer(r, make([]byte, 0, 8))
+	bs, err := Raw.Read(r)
 	if err != nil {
 		return "", err
 	}
 	return string(bs), nil
-}
-
-func writeRawString(w Writer, s string) error {
-	if _, err := w.Write([]byte(s)); err != nil {
-		return fmt.Errorf("RawString.Write: %w", err)
-	}
-	return nil
 }
 
 var String ProtoRanger[SpanElem[string], rune] = spanRanger[string, rune](RawString)
